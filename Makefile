@@ -3,9 +3,9 @@
 # License: http://www.opensource.org/licenses/BSD-2-Clause
 #
 
-VS2008_DEVENV_DIR=C:\Program Files (x86)\Microsoft Visual Studio 9.0\Common7\IDE
-VS2010_DEVENV_DIR=C:\Program Files (x86)\Microsoft Visual Studio 11.0\Common7\IDE
+#VS2010_DEVENV_DIR=C:\Program Files (x86)\Microsoft Visual Studio 11.0\Common7\IDE
 VS2012_DEVENV_DIR=C:\Program Files (x86)\Microsoft Visual Studio 11.0\Common7\IDE
+VS2017_DEVENV_DIR=C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE
 
 ifeq ($(OS),Windows_NT)
 	OS=windows
@@ -27,11 +27,11 @@ export CMFT_WIN_MINGW_DIR_=$(subst \,\\,$(subst /,\,$(WIN_MINGW_DIR)))
 .PHONY: all
 all:
 	$(GENIE) --file=scripts/main.lua xcode4
-	$(GENIE) --file=scripts/main.lua vs2008
 	$(GENIE) --file=scripts/main.lua vs2010
 	$(GENIE) --file=scripts/main.lua vs2012
 	$(GENIE) --file=scripts/main.lua vs2013
 	$(GENIE) --file=scripts/main.lua vs2015
+	$(GENIE) --file=scripts/main.lua vs2017
 	$(GENIE) --file=scripts/main.lua --gcc=mingw-gcc gmake
 	$(GENIE) --file=scripts/main.lua --gcc=linux-gcc gmake
 	$(GENIE) --file=scripts/main.lua --gcc=osx       gmake
@@ -51,18 +51,6 @@ clean: clean-build clean-projects
 
 _projects/xcode4:
 	$(GENIE) --file=scripts/main.lua xcode4
-
-_projects/vs2008:
-	$(GENIE) --file=scripts/main.lua vs2008
-vs2008-debug32:
-	"$(subst /,\\,$(VS2008_DEVENV_DIR))\devenv" _projects/vs2008/cmft.sln /Build "Debug|Win32"
-vs2008-release32:
-	"$(subst /,\\,$(VS2008_DEVENV_DIR))\devenv" _projects/vs2008/cmft.sln /Build "Release|Win32"
-vs2008-debug64:
-	"$(subst /,\\,$(VS2008_DEVENV_DIR))\devenv" _projects/vs2008/cmft.sln /Build "Debug|x64"
-vs2008-release64:
-	"$(subst /,\\,$(VS2008_DEVENV_DIR))\devenv" _projects/vs2008/cmft.sln /Build "Release|x64"
-vs2008: vs2008-debug32 vs2008-release32 vs2008-debug64 vs2008-release64
 
 _projects/vs2010:
 	$(GENIE) --file=scripts/main.lua vs2010
@@ -108,6 +96,17 @@ vs2015-debug64:
 vs2015-release64:
 	"$(subst /,\\,$(VS2015_DEVENV_DIR))\devenv" _projects/vs2015/cmft.sln /Build "Release|x64"
 
+_projects/vs2017:
+	$(GENIE) --file=scripts/main.lua vs2017
+vs2017-debug32:
+	"$(subst /,\\,$(VS2017_DEVENV_DIR))\devenv" _projects/vs2017/cmft.sln /Build "Debug|Win32"
+vs2017-release32:
+	"$(subst /,\\,$(VS2017_DEVENV_DIR))\devenv" _projects/vs2017/cmft.sln /Build "Release|Win32"
+vs2017-debug64:
+	"$(subst /,\\,$(VS2017_DEVENV_DIR))\devenv" _projects/vs2017/cmft.sln /Build "Debug|x64"
+vs2017-release64:
+	"$(subst /,\\,$(VS2017_DEVENV_DIR))\devenv" _projects/vs2017/cmft.sln /Build "Release|x64"
+
 _projects/gmake-linux:
 	$(GENIE) --file=scripts/main.lua --gcc=linux-gcc gmake
 linux-debug32: _projects/gmake-linux
@@ -151,7 +150,7 @@ osx: osx-debug32 osx-release32 osx-debug64 osx-release64
 #win-clang-release32: _projects/gmake-win-clang
 #	make -R -C _projects/gmake-win-clang config=release32
 #win-clang-debug64: _projects/gmake-win-clang
-#	make -R -C _projects/gmake-win-clang config=debug64
+#	make -R -C _projects/gmake-win-clang config=debug64git
 #win-clang-release64: _projects/gmake-win-clang
 #	make -R -C _projects/gmake-win-clang config=release64
 #win-clang: win-debug32 win-release32 win-debug64 win-release64
