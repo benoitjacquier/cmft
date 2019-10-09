@@ -15,6 +15,11 @@
 
 #include <string.h>
 
+// EXR
+#define TINYEXR_IMPLEMENTATION
+#include "tinyexr.h"
+#define EXR_MAGIC 0x01312f76
+
 namespace cmft
 {
     // Read/write.
@@ -85,8 +90,10 @@ namespace cmft
     void     rwClearError(Rw* _rw);
     RwSeekFn rwSeekFnFor(const Rw* _rw);
     RwReadFn rwReadFnFor(const Rw* _rw);
+	void*    rwReadAll(Rw* _rw, size_t* size);
 
-    struct RwScopeFileClose
+
+	struct RwScopeFileClose
     {
         RwScopeFileClose(Rw* _rw, bool _condition = true)
         {
@@ -277,6 +284,31 @@ namespace cmft
             return rwReadFile;
         }
     }
+
+	void* rwReadAll(Rw* _rw, size_t* size, AllocatorI* _allocator)
+	{
+		if (RwType::Memory == _rw->m_type)
+		{
+			*size = _rw->m_size;
+		}
+		else 
+		{
+			*size = rwSeekFile(_rw, 0, Whence::End);
+			rwSeekFile(_rw, 0, Whence::Begin);
+		}
+		void* data = CMFT_ALLOC(_allocator, *size);
+		if (RwType::Memory == _rw->m_type)
+		{
+			rwReadMem(_rw, data, *size);
+		}
+		else
+		{
+			rwReadFile(_rw, data, *size);
+		}
+		return data;
+	}
+
+
 
     // Texture format string.
     //-----
@@ -4477,6 +4509,44 @@ namespace cmft
         return true;
     }
 
+	bool imageLoadExr(Image& _image, Rw* _rw, AllocatorI* _allocator)
+	{
+		size_t read;
+		CMFT_UNUSED( read );
+
+		bool didOpen = rwFileOpen( _rw, "rb" );
+		RwScopeFileClose scopeClose( _rw, didOpen );
+
+		Image result;
+		size_t size;
+		void* memory = rwReadAll(_rw, &size, _allocator);
+
+		int width,height;
+		float* data;
+		const char *err;
+		if( TINYEXR_SUCCESS!=LoadEXRFromMemory(&data, &width, &height, (unsigned char*)memory, size, &err) )
+		{
+			WARN( "exr error %s", err );
+			CMFT_FREE(_allocator, memory);
+			return false;
+		}
+
+		// Fill image structure.
+		result.m_width = width;
+		result.m_height = height;
+		result.m_dataSize = width*height*4*sizeof(float);
+		result.m_format = TextureFormat::RGBA32F;
+		result.m_numMips = 1;
+		result.m_numFaces = 1;
+		result.m_data = data;
+
+		// Output.
+		imageCopy( _image, result, _allocator );
+
+		CMFT_FREE(_allocator, memory);
+		return true;
+	}
+
     bool imageLoadKtx(Image& _image, Rw* _rw, AllocatorI* _allocator)
     {
         size_t read;
@@ -5043,6 +5113,10 @@ namespace cmft
         {
             loaded = imageLoadTga(_image, _rw, _allocator);
         }
+		else if (EXR_MAGIC == magic)
+		{
+			loaded = imageLoadExr(_image, _rw, _allocator);
+		}
 
         if (!loaded)
         {
